@@ -116,6 +116,7 @@ def exibir_apresentacao():
     identificação de padrões, a detecção de inconsistências e o exame da alocação patrimonial dentro da universidade.
 
     Para interpretação dos dados, deve-se considerar que o Valor Analisado corresponde ao Valor de Ingresso, enquanto o Valor Contábil equivale ao Valor Depreciado.
+                
     **Destaca-se que esta análise representa apenas uma amostra representativa e não deve ser interpretada como um relatório completo ou definitivo.**                          
     """)
     st.markdown("### Funcionalidades Disponíveis")
@@ -183,10 +184,10 @@ def exibir_carga_patrimonial():
     total_valor_analisado = df_resumo_unidade["_Valor_Numerico"].sum()
     total_valor_contabil = df_resumo_unidade["_Valor_Contabil_Numerico"].sum()
     total_bens_institucional = df_resumo_unidade["Total de Bens"].sum()
-    try:
-        formatted_total_bens = f"{total_bens_institucional:n}"
-    except (ValueError, locale.Error):
-        formatted_total_bens = f"{total_bens_institucional:,}".replace(",", ".")
+    
+    # ALTERAÇÃO APLICADA AQUI:
+    # Removemos o bloco try-except e aplicamos a formatação diretamente.
+    formatted_total_bens = f"{total_bens_institucional:,}".replace(",", ".")
         
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -204,7 +205,6 @@ def exibir_carga_patrimonial():
         df_resumo_unidade[["Id", "Total de Bens", "Valor Analisado (R$)", "Valor Contábil Analisado (R$)"]],
         column_config={
             "Id": st.column_config.TextColumn("Unidade (Id)", help="Identificador da Unidade"),
-            # ALTERAÇÃO APLICADA AQUI:
             "Total de Bens": st.column_config.TextColumn("Total de Bens", help="Quantidade de bens patrimoniais na unidade"),
             "Valor Analisado (R$)": st.column_config.TextColumn("Valor Analisado (R$)", help="Soma do valor de aquisição ('Valor') dos bens na unidade"),
             "Valor Contábil Analisado (R$)": st.column_config.TextColumn("Valor Contábil Analisado (R$)", help="Soma do valor contábil dos bens na unidade"),
