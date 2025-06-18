@@ -204,7 +204,8 @@ def exibir_carga_patrimonial():
         df_resumo_unidade[["Id", "Total de Bens", "Valor Analisado (R$)", "Valor Contábil Analisado (R$)"]],
         column_config={
             "Id": st.column_config.TextColumn("Unidade (Id)", help="Identificador da Unidade"),
-            "Total de Bens": st.column_config.NumberColumn("Total de Bens", help="Quantidade de bens patrimoniais na unidade", format="%d"),
+            # ALTERAÇÃO APLICADA AQUI:
+            "Total de Bens": st.column_config.TextColumn("Total de Bens", help="Quantidade de bens patrimoniais na unidade"),
             "Valor Analisado (R$)": st.column_config.TextColumn("Valor Analisado (R$)", help="Soma do valor de aquisição ('Valor') dos bens na unidade"),
             "Valor Contábil Analisado (R$)": st.column_config.TextColumn("Valor Contábil Analisado (R$)", help="Soma do valor contábil dos bens na unidade"),
         }, height=450, use_container_width=True)
@@ -589,7 +590,7 @@ def exibir_conta_siafi_18():
 
     data = data_original.copy()
 
-    required_cols = ["Id", "Conta SIAFI", "Valor Contabil", "Valor da Base", "Tombamento", "Bem Móvel"]
+    required_cols = ["Id", "Conta SIAFI", "Valor", "Valor Contabil", "Tombamento", "Bem Móvel"]
     if not all(col in data.columns for col in required_cols):
         missing = [col for col in required_cols if col not in data.columns]
         st.warning(f"Colunas necessárias não encontradas: {', '.join(missing)}. Não é possível gerar a aba Conta SIAFI 18.")
@@ -602,22 +603,24 @@ def exibir_conta_siafi_18():
         return
 
     st.markdown("##### Detalhamento por Unidade (Conta SIAFI 18)")
+    
     df_resumo_id_siafi18 = df_trabalho.groupby("Id", as_index=False).agg(
         Quantidade_Bens_Siafi18=("Tombamento", "count"),
-        _Soma_Valor_Analisado_Siafi18_Numerico=("Valor da Base", "sum"),
-        _Soma_Valor_Contabil_Analisado_Siafi18_Numerico=("Valor Contabil", "sum")
-    ).sort_values("_Soma_Valor_Contabil_Analisado_Siafi18_Numerico", ascending=False)
-
-    df_resumo_id_siafi18["Valor Analisado Total (R$)"] = df_resumo_id_siafi18["_Soma_Valor_Analisado_Siafi18_Numerico"].apply(format_currency)
-    df_resumo_id_siafi18["Valor Contábil Analisado Total (R$)"] = df_resumo_id_siafi18["_Soma_Valor_Contabil_Analisado_Siafi18_Numerico"].apply(format_currency)
-
+        _Soma_Valor_Analisado_Numerico=("Valor", "sum"),
+        _Soma_Valor_Contabil_Siafi18_Numerico=("Valor Contabil", "sum")
+    ).sort_values("_Soma_Valor_Contabil_Siafi18_Numerico", ascending=False)
+    
+    df_resumo_id_siafi18["Valor Analisado Total (R$)"] = df_resumo_id_siafi18["_Soma_Valor_Analisado_Numerico"].apply(format_currency)
+    df_resumo_id_siafi18["Valor Contábil Analisado Total (R$)"] = df_resumo_id_siafi18["_Soma_Valor_Contabil_Siafi18_Numerico"].apply(format_currency)
+    
     st.dataframe(
         df_resumo_id_siafi18[["Id", "Quantidade_Bens_Siafi18", "Valor Analisado Total (R$)", "Valor Contábil Analisado Total (R$)"]],
         column_config={
             "Id": st.column_config.TextColumn("Unidade (Id)", help="Identificador da Unidade"),
-            "Quantidade_Bens_Siafi18": st.column_config.NumberColumn("Qtd. Bens na Conta 18", help="Quantidade de bens da Conta SIAFI 18 na unidade", format="%d"),
+            # ALTERAÇÃO APLICADA AQUI: Trocado para TextColumn para alinhar à esquerda
+            "Quantidade_Bens_Siafi18": st.column_config.TextColumn("Qtd. Bens na Conta 18", help="Quantidade de bens da Conta SIAFI 18 na unidade"),
             "Valor Analisado Total (R$)": st.column_config.TextColumn("Valor Analisado Total (R$)", help="Soma do valor analisado dos bens da Conta SIAFI 18 na unidade"),
-            "Valor Contábil Analisado Total (R$)": st.column_config.TextColumn("Valor Contábil Analisado Total (R$)", help="Soma do valor contábil analisado dos bens da Conta SIAFI 18 na unidade"),
+            "Valor Contábil Analisado Total (R$)": st.column_config.TextColumn("Valor Contábil Analisado Total (R$)", help="Soma do valor contábil dos bens da Conta SIAFI 18 na unidade"),
         },
         height=300,
         use_container_width=True
@@ -625,11 +628,11 @@ def exibir_conta_siafi_18():
     st.markdown("---")
 
     with st.expander("Visualizar Detalhamento de Todos os Bens (Conta SIAFI 18)", expanded=False):
-        df_trabalho["Valor Analisado Formatado"] = df_trabalho["Valor da Base"].apply(format_currency)
-        df_trabalho["Valor Contábil Analisado Formatado"] = df_trabalho["Valor Contabil"].apply(format_currency)
-
-        cols_to_show_detalhado = ["Id", "Tombamento", "Bem Móvel", "Conta SIAFI", "Valor Analisado Formatado", "Valor Contábil Analisado Formatado"]
-
+        df_trabalho["Valor Analisado Formatado"] = df_trabalho["Valor"].apply(format_currency)
+        df_trabalho["Valor Contabil Analisado Formatado"] = df_trabalho["Valor Contabil"].apply(format_currency)
+        
+        cols_to_show_detalhado = ["Id", "Tombamento", "Bem Móvel", "Conta SIAFI", "Valor Analisado Formatado", "Valor Contabil Analisado Formatado"]
+        
         st.dataframe(
             df_trabalho[cols_to_show_detalhado],
             column_config={
@@ -638,25 +641,26 @@ def exibir_conta_siafi_18():
                 "Bem Móvel": st.column_config.TextColumn("Descrição do Bem"),
                 "Conta SIAFI": st.column_config.NumberColumn("Conta Contábil", format="%d"),
                 "Valor Analisado Formatado": st.column_config.TextColumn("Valor Analisado (R$)"),
-                "Valor Contábil Analisado Formatado": st.column_config.TextColumn("Valor Contábil Analisado (R$)"),
+                "Valor Contabil Analisado Formatado": st.column_config.TextColumn("Valor Contábil Analisado (R$)")
             },
             height=400,
             use_container_width=True
         )
-
+    
     st.markdown("---")
     st.markdown("### Resumo Consolidado Geral (Conta SIAFI 18)")
 
     ids_unicos_na_conta18 = df_trabalho["Id"].nunique()
     quantidade_total_bens_conta18 = len(df_trabalho)
-    soma_total_valor_analisado_conta18 = df_trabalho["Valor da Base"].dropna().sum()
-    soma_total_valor_contabil_analisado_conta18 = df_trabalho["Valor Contabil"].dropna().sum()
+    
+    soma_total_valor_analisado_conta18 = df_trabalho["Valor"].dropna().sum()
+    soma_total_valor_contabil_conta18 = df_trabalho["Valor Contabil"].dropna().sum()
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Unidades (Id) Distintas com Itens na Conta 18", f"{ids_unicos_na_conta18}")
     col2.metric("Qtd. Total de Bens na Conta 18", f"{quantidade_total_bens_conta18:,}".replace(",", "."))
     col3.metric("Valor Analisado Total da Conta 18 (R$)", format_currency(soma_total_valor_analisado_conta18))
-    col4.metric("Valor Contábil Analisado Total da Conta 18 (R$)", format_currency(soma_total_valor_contabil_analisado_conta18))
+    col4.metric("Valor Contábil Analisado Total da Conta 18 (R$)", format_currency(soma_total_valor_contabil_conta18))
 
 # ============================
 # ABA: Centavos
@@ -699,7 +703,8 @@ def exibir_aba_centavos():
         df_resumo_id_centavos[["Id", "Quantidade_Bens_Centavos", "Valor Analisado Total (R$)", "Valor Contábil Total Residual (R$)"]],
         column_config={
             "Id": st.column_config.TextColumn("Unidade (Id)", help="Identificador da Unidade"),
-            "Quantidade_Bens_Centavos": st.column_config.NumberColumn("Qtd. Bens Residuais", format="%d"),
+            # ALTERAÇÃO APLICADA AQUI:
+            "Quantidade_Bens_Centavos": st.column_config.TextColumn("Qtd. Bens Residuais", help="Quantidade de bens com valor residual na unidade"),
             "Valor Analisado Total (R$)": st.column_config.TextColumn("Valor Analisado Total (R$)"),
             "Valor Contábil Total Residual (R$)": st.column_config.TextColumn("Valor Contábil Total (R$)")
         },
@@ -788,8 +793,9 @@ def exibir_aba_siafi():
     st.dataframe(
         df_resumo_siafi[cols_para_exibir_siafi],
         column_config={
-            "Conta SIAFI": st.column_config.NumberColumn("Conta SIAFI", help="Número da Conta Contábil SIAFI", format="%d"),
-            "Total_Itens": st.column_config.NumberColumn("Total de Itens", help="Quantidade de bens nesta conta SIAFI", format="%d"),
+            # ALTERAÇÃO APLICADA AQUI:
+            "Conta SIAFI": st.column_config.TextColumn("Conta SIAFI", help="Número da Conta Contábil SIAFI"),
+            "Total_Itens": st.column_config.TextColumn("Total de Itens", help="Quantidade de bens nesta conta SIAFI"),
             "Valor Total Analisado (R$)": st.column_config.TextColumn("Valor Total Analisado (R$)", help="Soma do valor de aquisição dos bens nesta conta"),
             "Valor Contábil Analisado (R$)": st.column_config.TextColumn("Valor Contábil Analisado (R$)", help="Soma do valor contábil dos bens nesta conta"),
         },
